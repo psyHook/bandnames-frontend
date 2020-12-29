@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from "react";
+import { SocketContext } from "../context/SocketContext";
 
-export const BandList = ({ data, vote, deleteBand, changeNameBand }) => {
-  const [bands, setBands] = useState(data);
+export const BandList = () => {
+  const [bands, setBands] = useState([]);
+  const { socket } = useContext(SocketContext);
 
   useEffect(() => {
-    setBands(data);
-  }, [data]);
+    socket.on("current-bands", (bands) => {
+      setBands(bands);
+    });
+
+    return () => socket.off("current-bands");
+  }, [socket]);
 
   const changeName = (event, id) => {
     const newName = event.target.value;
@@ -21,23 +27,28 @@ export const BandList = ({ data, vote, deleteBand, changeNameBand }) => {
   };
 
   const onLostFocus = (id, name) => {
-    console.log(id, name);
+    socket.emit("change-name-band", { id, name });
+  };
 
-    //TODO: Disparar el evento de sockets
-    changeNameBand( id, name )
+  const vote = (id) => {
+    socket.emit("vote-band", id);
+  };
+
+  const deleteBand = (id) => {
+    socket.emit("delete-band", id);
   };
 
   const createRows = () => {
     return bands.map((band) => (
       <tr key={band.id}>
         <td>
-          <button className='btn btn-primary' onClick={() => vote(band.id)}>
+          <button className="btn btn-primary" onClick={() => vote(band.id)}>
             +1
           </button>
         </td>
         <td>
           <input
-            className='form-control'
+            className="form-control"
             value={band.name}
             onChange={(event) => changeName(event, band.id)}
             onBlur={() => onLostFocus(band.id, band.name)}
@@ -48,7 +59,7 @@ export const BandList = ({ data, vote, deleteBand, changeNameBand }) => {
         </td>
         <td>
           <button
-            className='btn btn-danger'
+            className="btn btn-danger"
             onClick={() => deleteBand(band.id)}
           >
             Delete
@@ -60,7 +71,7 @@ export const BandList = ({ data, vote, deleteBand, changeNameBand }) => {
 
   return (
     <>
-      <table className='table table-stripped'>
+      <table className="table table-stripped">
         <thead>
           <tr>
             <th></th>
